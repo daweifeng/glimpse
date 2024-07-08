@@ -12,7 +12,7 @@ export default function Home() {
         </p>
         <div className="flex flex-col justify-around flex-wrap m-auto p-8">
           <button className="min-w-40 bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150">
-            New Room
+            <a href="/new">Create Room</a>
           </button>
           <button className="min-w-40 bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150">
             Join Room
