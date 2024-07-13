@@ -1,0 +1,5 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/glimpse_server",
+    "cmake.buildDirectory": "${workspaceFolder}/glimpse_server/build",
+    "cmake.useCMakePresets": "auto",
+}
