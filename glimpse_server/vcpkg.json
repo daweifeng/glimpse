@@ -1,0 +1,10 @@
+{
+  "dependencies": [
+    "boost-uuid",
+    "fmt",
+    "spdlog",
+    "uwebsockets",
+    "zlib",
+    "nlohmann-json"
+  ]
+}
