@@ -3,6 +3,7 @@
 #include <libusockets.h>
 #include <uwebsockets/App.h>
 
+#include <functional>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string_view>
@@ -24,12 +25,49 @@ struct CreateNewRoomResponsePayload {
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(CreateNewRoomResponsePayload, roomId);
 };
 
+struct JoinRoomRequestPayload {
+  std::string userId;
+  std::string username;
+  std::string roomId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(JoinRoomRequestPayload, userId, username,
+                                 roomId);
+};
+
+struct JoinRoomResponsePayload {
+  std::string requestId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(JoinRoomResponsePayload, requestId);
+};
+
+struct ApproveJoinRoomRequestPayload {
+  std::string userId;
+  std::string requestId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(ApproveJoinRoomRequestPayload, userId,
+                                 requestId);
+};
+
+struct DenyJoinRoomRequestPayload {
+  std::string userId;
+  std::string requestId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(DenyJoinRoomRequestPayload, userId, requestId);
+};
+
 constexpr std::string_view ALLOWED_ORIGIN = "*";
 
 constexpr std::string_view HTTP_STATUS_200 = "200 Ok";
 constexpr std::string_view HTTP_STATUS_400 = "400 Bad Request";
 
-class Controller {};
+class Controller {
+ protected:
+  void handlePost(
+      uWS::HttpResponse<false> *res, uWS::HttpRequest *req,
+      std::function<void(uWS::HttpResponse<false> *res, uWS::HttpRequest *req,
+                         std::shared_ptr<std::string> body)>
+          bodyHandler);
+};
 
 class RootController : Controller {
  public:
@@ -42,6 +80,11 @@ class RoomController : Controller {
   RoomController(std::shared_ptr<RoomManager> roomManager);
   void handleCreateNewRoomPost(uWS::HttpResponse<false> *res,
                                uWS::HttpRequest *req);
+  void handleJoinRoomPost(uWS::HttpResponse<false> *res, uWS::HttpRequest *req);
+  void handleApproveJoinRoomPost(uWS::HttpResponse<false> *res,
+                                 uWS::HttpRequest *req);
+  void handleDenyJoinRoomPost(uWS::HttpResponse<false> *res,
+                              uWS::HttpRequest *req);
 
  private:
   std::shared_ptr<RoomManager> roomManager_;

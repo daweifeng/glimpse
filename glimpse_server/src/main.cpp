@@ -4,15 +4,14 @@
 #include <functional>
 #include <memory>
 
-#include "HttpResponse.h"
 #include "controller.h"
 #include "ws_manager.h"
 
 constexpr int PORT = 8080;
 
 int main() {
-  auto roomManager = std::make_shared<glimpse::RoomManager>();
   auto wsManager = std::make_shared<glimpse::WsManager>();
+  auto roomManager = std::make_shared<glimpse::RoomManager>(wsManager);
   glimpse::RootController rootController;
   glimpse::RoomController roomController(roomManager);
   glimpse::WsController wsController;
@@ -25,6 +24,18 @@ int main() {
                          std::placeholders::_1, std::placeholders::_2))
       .post("/room",
             std::bind(&glimpse::RoomController::handleCreateNewRoomPost,
+                      roomController, std::placeholders::_1,
+                      std::placeholders::_2))
+      .post("/room/join",
+            std::bind(&glimpse::RoomController::handleJoinRoomPost,
+                      roomController, std::placeholders::_1,
+                      std::placeholders::_2))
+      .post("/room/join/approve",
+            std::bind(&glimpse::RoomController::handleApproveJoinRoomPost,
+                      roomController, std::placeholders::_1,
+                      std::placeholders::_2))
+      .post("/room/join/deny",
+            std::bind(&glimpse::RoomController::handleDenyJoinRoomPost,
                       roomController, std::placeholders::_1,
                       std::placeholders::_2))
       .ws<glimpse::User>(
@@ -40,7 +51,8 @@ int main() {
            .open = std::bind(&glimpse::WsManager::handleWsOpen, wsManager,
                              std::placeholders::_1),
            .message = std::bind(&glimpse::WsManager::handleWsMessage, wsManager,
-           std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                                std::placeholders::_1, std::placeholders::_2,
+                                std::placeholders::_3),
            .drain =
                [](auto* /*ws*/) {
                  /* Check ws->getBufferedAmount() here */

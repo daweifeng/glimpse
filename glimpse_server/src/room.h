@@ -1,17 +1,21 @@
 #include <string>
 
+#include "user.h"
+
 namespace glimpse {
 class Room {
  public:
-  Room(const std::string& id, const std::string& hostId);
+  Room(const std::string& id, const User& host);
 
   std::string getId();
   std::string getHostId();
 
-  void setHost(const std::string& hostId);
+  void setHost(const User& user);
+  void setGuest(const User& user);
 
  private:
   std::string id_;
-  std::string hostId_;
+  User host_;
+  User guest_;
 };
 }  // namespace glimpse

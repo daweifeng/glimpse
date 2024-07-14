@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <exception>
+#include <mutex>
 
 #include "WebSocketProtocol.h"
 
@@ -37,8 +38,6 @@ void WsManager::handleWsMessage(WsSession *ws, std::string_view message,
     } else if (wsMessage.type == WsMessage::Type::PONG) {
       WsMessage pingMsg = {.type = WsMessage::PING, .payload = ""};
       sendWsMessage(ws, pingMsg);
-    } else if (wsMessage.type == WsMessage::Type::JOIN_ROOM) {
-      // TODO
     } else {
       spdlog::error("Received unsupported message type: {}",
                     static_cast<int>(wsMessage.type));
@@ -52,6 +51,18 @@ void WsManager::handleWsMessage(WsSession *ws, std::string_view message,
 
 void WsManager::sendWsMessage(WsSession *ws, const WsMessage &message) {
   ws->send(nlohmann::json(message).dump(), uWS::OpCode::TEXT);
+}
+
+void WsManager::sendMessage(const std::string &userId,
+                            const WsMessage &message) {
+  {
+    std::lock_guard<std::mutex> lock(sessionsMutex_);
+    if (not wsSessions_.contains(userId)) {
+      throw WsManagerError("user is not connected");
+    }
+
+    sendWsMessage(wsSessions_.at(userId), message);
+  }
 }
 
 };  // namespace glimpse
