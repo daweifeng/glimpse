@@ -33,7 +33,7 @@ bool RoomManager::roomExists(const std::string& roomId) {
 
 std::string RoomManager::joinRoom(const User& user, const std::string& roomId) {
   if (not rooms_.contains(roomId)) {
-    throw std::runtime_error("room does not exit");
+    throw RoomManagerError("room does not exit");
   }
 
   auto joinRoomRequestId =
@@ -66,15 +66,15 @@ std::string RoomManager::joinRoom(const User& user, const std::string& roomId) {
 void RoomManager::approveJoinRoomRequest(const std::string& requestId,
                                          const std::string& hostId) {
   if (not requests_.contains(requestId)) {
-    throw std::runtime_error("request does not exist");
+    throw RoomManagerError("request does not exist");
   }
   auto roomId = requests_.at(requestId).roomId;
   if (not rooms_.contains(roomId)) {
-    throw std::runtime_error("room does not exist");
+    throw RoomManagerError("room does not exist");
   }
 
   if (not isRoomHost(hostId, roomId)) {
-    throw std::runtime_error("user is not a host");
+    throw RoomManagerError("user is not a host");
   }
 
   rooms_.at(roomId).setGuest({
@@ -103,17 +103,17 @@ void RoomManager::approveJoinRoomRequest(const std::string& requestId,
 void RoomManager::denyJoinRoomRequest(const std::string& requestId,
                                       const std::string& hostId) {
   if (not requests_.contains(requestId)) {
-    throw std::runtime_error("request does not exist");
+    throw RoomManagerError("request does not exist");
   }
 
   auto roomId = requests_.at(requestId).roomId;
 
   if (not rooms_.contains(roomId)) {
-    throw std::runtime_error("room does not exist");
+    throw RoomManagerError("room does not exist");
   }
 
   if (not isRoomHost(hostId, roomId)) {
-    throw std::runtime_error("user is not a host");
+    throw RoomManagerError("user is not a host");
   }
 
   WsJoinRoomResultPayload payload = {
@@ -124,5 +124,47 @@ void RoomManager::denyJoinRoomRequest(const std::string& requestId,
 
   requests_.erase(requestId);
 };
+
+void RoomManager::exchangeSDPMessage(const std::string& roomId,
+                                     const std::string& fromUserId,
+                                     const std::string& message) {
+  if (not rooms_.contains(roomId)) {
+    throw RoomManagerError("room does not exist");
+  }
+
+  if (fromUserId != rooms_.at(roomId).getHostId() and
+      fromUserId != rooms_.at(roomId).getGuestId()) {
+    throw RoomManagerError("user is not in this room");
+  }
+
+  if (fromUserId == rooms_.at(roomId).getHostId()) {
+    wsManager_->sendMessage(rooms_.at(roomId).getGuestId(),
+                            {.type = WsMessage::SDP, .payload = message});
+  } else {
+    wsManager_->sendMessage(rooms_.at(roomId).getHostId(),
+                            {.type = WsMessage::SDP, .payload = message});
+  }
+}
+
+void RoomManager::exchangeICEMessage(const std::string& roomId,
+                                     const std::string& fromUserId,
+                                     const std::string& message) {
+  if (not rooms_.contains(roomId)) {
+    throw RoomManagerError("room does not exist");
+  }
+
+  if (fromUserId != rooms_.at(roomId).getHostId() and
+      fromUserId != rooms_.at(roomId).getGuestId()) {
+    throw RoomManagerError("user is not in this room");
+  }
+
+  if (fromUserId == rooms_.at(roomId).getHostId()) {
+    wsManager_->sendMessage(rooms_.at(roomId).getGuestId(),
+                            {.type = WsMessage::ICE, .payload = message});
+  } else {
+    wsManager_->sendMessage(rooms_.at(roomId).getHostId(),
+                            {.type = WsMessage::ICE, .payload = message});
+  }
+}
 
 };  // namespace glimpse

@@ -9,6 +9,7 @@ class Room {
 
   std::string getId();
   std::string getHostId();
+  std::string getGuestId();
 
   void setHost(const User& user);
   void setGuest(const User& user);

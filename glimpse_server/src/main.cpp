@@ -38,6 +38,12 @@ int main() {
             std::bind(&glimpse::RoomController::handleDenyJoinRoomPost,
                       roomController, std::placeholders::_1,
                       std::placeholders::_2))
+      .post("/room/sdp",
+            std::bind(&glimpse::RoomController::handleSDPPost, roomController,
+                      std::placeholders::_1, std::placeholders::_2))
+      .post("/room/ice",
+            std::bind(&glimpse::RoomController::handleICEPost, roomController,
+                      std::placeholders::_1, std::placeholders::_2))
       .ws<glimpse::User>(
           "/ws",
           {.compression = uWS::SHARED_COMPRESSOR,

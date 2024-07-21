@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -9,6 +10,17 @@
 #include "ws_manager.h"
 
 namespace glimpse {
+
+class RoomManagerError : public std::exception {
+ public:
+  RoomManagerError(const char* message) : msg_(message) {}
+
+  virtual const char* what() const noexcept override { return msg_; }
+
+ private:
+  const char* msg_;
+};
+
 class RoomManager {
  public:
   RoomManager(std::shared_ptr<WsManager> wsManager);
@@ -21,6 +33,12 @@ class RoomManager {
                               const std::string& userId);
   void denyJoinRoomRequest(const std::string& requestId,
                            const std::string& userId);
+  void exchangeSDPMessage(const std::string& roomId,
+                          const std::string& fromUserId,
+                          const std::string& message);
+  void exchangeICEMessage(const std::string& roomId,
+                          const std::string& fromUserId,
+                          const std::string& message);
 
  private:
   std::shared_ptr<WsManager> wsManager_;

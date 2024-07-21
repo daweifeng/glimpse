@@ -53,6 +53,8 @@ struct WsMessage {
     ALLOW_JOIN_ROOM,
     DENY_JOIN_ROOM,
     ROOM_READY,
+    SDP,
+    ICE,
   };
 
   Type type;

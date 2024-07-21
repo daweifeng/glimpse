@@ -175,6 +175,62 @@ void RoomController::handleDenyJoinRoomPost(uWS::HttpResponse<false> *res,
   });
 }
 
+void RoomController::handleSDPPost(uWS::HttpResponse<false> *res,
+                                   uWS::HttpRequest *req) {
+  handlePost(res, req, [this](auto *res, auto *, auto body) {
+    try {
+      auto j = nlohmann::json::parse(*body);
+      auto payload = j.template get<SDPExchangePayload>();
+
+      if (payload.sdp.empty() or payload.userId.empty()) {
+        throw std::runtime_error("empty payload field");
+      }
+
+      roomManager_->exchangeSDPMessage(payload.roomId, payload.userId,
+                                       payload.sdp);
+
+      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+          ->end("{}");
+    } catch (const nlohmann::json::exception &e) {
+      auto errMsg = fmt::format("Invalid payload: {}", e.what());
+      spdlog::error(errMsg);
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
+    } catch (std::exception &err) {
+      auto errMsg = fmt::format("Could not exchange sdp: {}", err.what());
+      spdlog::error(errMsg);
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
+    }
+  });
+};
+
+void RoomController::handleICEPost(uWS::HttpResponse<false> *res,
+                                   uWS::HttpRequest *req) {
+  handlePost(res, req, [this](auto *res, auto *, auto body) {
+    try {
+      auto j = nlohmann::json::parse(*body);
+      auto payload = j.template get<ICEExchangePayload>();
+
+      if (payload.ice.empty() or payload.userId.empty()) {
+        throw std::runtime_error("empty payload field");
+      }
+
+      roomManager_->exchangeICEMessage(payload.roomId, payload.userId,
+                                       payload.ice);
+
+      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+          ->end("{}");
+    } catch (const nlohmann::json::exception &e) {
+      auto errMsg = fmt::format("Invalid payload: {}", e.what());
+      spdlog::error(errMsg);
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
+    } catch (std::exception &err) {
+      auto errMsg = fmt::format("Could not exchange ice: {}", err.what());
+      spdlog::error(errMsg);
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
+    }
+  });
+};
+
 void WsController::handleWsRouteUpgrade(uWS::HttpResponse<false> *res,
                                         uWS::HttpRequest *req,
                                         us_socket_context_t *context) {
@@ -191,5 +247,5 @@ void WsController::handleWsRouteUpgrade(uWS::HttpResponse<false> *res,
       {.id = userId, .name = userName}, req->getHeader("sec-websocket-key"),
       req->getHeader("sec-websocket-protocol"),
       req->getHeader("sec-websocket-extensions"), context);
-};
+}
 }  // namespace glimpse
