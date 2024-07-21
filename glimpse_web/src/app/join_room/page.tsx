@@ -1,5 +1,6 @@
 'use client';
 import { createRoom } from "@/utils/api";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { v4 as uuidv4 } from "uuid";
 
@@ -17,16 +18,21 @@ function StartButton() {
     )
 }
 
-export default function NewPage() {
+export default function NewRoomPage() {
+    const router = useRouter();
 
     const handleSubmit = async (data: FormData) => {
         const username = data.get("username");
+        const roomId = data.get("room-id");
         try {
-            if (username) {
-                const response = await createRoom(username.toString(), uuidv4());
-                console.log(response)
+            if (username && roomId) {
+                const userId = uuidv4();
+                window.localStorage.setItem("userId", userId);
+                window.localStorage.setItem("username", username.toString());
+                router.push(`/room?id=${roomId}&&is_host=false`);
             } else {
                 // Show error
+                console.error("Username and room id is required");
             }
         } catch (error) {
             console.error(error);
@@ -41,6 +47,10 @@ export default function NewPage() {
                     Your name
                 </label>
                 <input required id="username" name="username" className="border border-slate-300 rounded p-2" type="text" />
+                <label className="" htmlFor="username">
+                    Room Id
+                </label>
+                <input required id="room-id" name="room-id" className="border border-slate-300 rounded p-2" type="text" />
                 <StartButton />
             </form>
         </main>

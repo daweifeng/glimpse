@@ -12,6 +12,12 @@
 
 namespace glimpse {
 
+struct ErrorResponsePayload {
+  std::string message;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(ErrorResponsePayload, message);
+};
+
 struct CreateNewRoomRequestPayload {
   std::string userId;
   std::string username;
@@ -67,6 +73,9 @@ class Controller {
       std::function<void(uWS::HttpResponse<false> *res, uWS::HttpRequest *req,
                          std::shared_ptr<std::string> body)>
           bodyHandler);
+
+  void respondError(uWS::HttpResponse<false> *res,
+                    const std::string &errorMessage);
 };
 
 class RootController : Controller {

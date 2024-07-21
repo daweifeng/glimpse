@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -11,12 +12,16 @@ export default function Home() {
           No sign up, no tracking, just video chat.
         </p>
         <div className="flex flex-col justify-around flex-wrap m-auto p-8">
-          <button className="min-w-40 bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150">
-            <a href="/new">Create Room</a>
-          </button>
-          <button className="min-w-40 bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150">
-            Join Room
-          </button>
+          <Link href="/new_room">
+            <button className="min-w-40 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150">
+              Create Room
+            </button>
+          </Link>
+          <Link href="/join_room">
+            <button className="min-w-40 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150">
+              Join Room
+            </button>
+          </Link>
         </div>
       </div>
       <footer className="absolute bottom-0 w-full text-center text-slate-800 p-4 text-sm font-light">

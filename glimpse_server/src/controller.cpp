@@ -40,6 +40,15 @@ void Controller::handlePost(
   });
 }
 
+void Controller::respondError(uWS::HttpResponse<false> *res,
+                              const std::string &errorMessage) {
+  ErrorResponsePayload response = {.message = errorMessage};
+  nlohmann::json responseJ = response;
+  res->writeStatus(HTTP_STATUS_400)
+      ->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+      ->end(responseJ.dump());
+}
+
 void RootController::handleGet(uWS::HttpResponse<false> *res,
                                uWS::HttpRequest *) {
   res->end("Hey, this is Glimpse Server!");
@@ -72,8 +81,7 @@ void RoomController::handleCreateNewRoomPost(uWS::HttpResponse<false> *res,
     } catch (const nlohmann::json::exception &e) {
       auto errMsg = fmt::format("Invalid payload: {}", e.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     }
   });
 };
@@ -104,13 +112,11 @@ void RoomController::handleJoinRoomPost(uWS::HttpResponse<false> *res,
     } catch (const nlohmann::json::exception &e) {
       auto errMsg = fmt::format("Invalid payload: {}", e.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     } catch (std::exception &err) {
       auto errMsg = fmt::format("Could not join room: {}", err.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     }
   });
 };
@@ -128,17 +134,16 @@ void RoomController::handleApproveJoinRoomPost(uWS::HttpResponse<false> *res,
 
       roomManager_->approveJoinRoomRequest(payload.requestId, payload.userId);
 
-      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)->end();
+      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+          ->end("{}");
     } catch (const nlohmann::json::exception &e) {
       auto errMsg = fmt::format("Invalid payload: {}", e.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     } catch (std::exception &err) {
-      auto errMsg = fmt::format("Could not join room: {}", err.what());
+      auto errMsg = fmt::format("Could not approve join room: {}", err.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     }
   });
 }
@@ -154,19 +159,18 @@ void RoomController::handleDenyJoinRoomPost(uWS::HttpResponse<false> *res,
         throw std::runtime_error("empty payload field");
       }
 
-      roomManager_->approveJoinRoomRequest(payload.requestId, payload.userId);
+      roomManager_->denyJoinRoomRequest(payload.requestId, payload.userId);
 
-      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)->end();
+      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+          ->end("{}");
     } catch (const nlohmann::json::exception &e) {
       auto errMsg = fmt::format("Invalid payload: {}", e.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     } catch (std::exception &err) {
       auto errMsg = fmt::format("Could not join room: {}", err.what());
       spdlog::error(errMsg);
-      res->cork(
-          [res, errMsg]() { res->writeStatus(HTTP_STATUS_400)->end(errMsg); });
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
     }
   });
 }

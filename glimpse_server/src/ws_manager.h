@@ -17,23 +17,32 @@ constexpr uint32_t WS_IDLE_TIMEOUT = 10;                    // second
 constexpr uint32_t WS_MAX_BACK_PRESSURE = 1 * 1024 * 1024;  // kB
 
 struct WsJoinRoomResultPayload {
+  std::string requestId;
   std::string roomId;
   bool approved;
 
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsJoinRoomResultPayload, roomId, approved);
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsJoinRoomResultPayload, requestId, roomId,
+                                 approved);
 };
 
 struct WsJoinRoomRequestPayload {
+  std::string requestId;
   std::string roomId;
   std::string userId;
   std::string username;
 
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsJoinRoomRequestPayload, roomId, username,
-                                 userId);
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsJoinRoomRequestPayload, requestId, roomId,
+                                 username, userId);
+};
+
+struct WsRoomReadyPayload {
+  std::string roomId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsRoomReadyPayload, roomId);
 };
 
 using WsPayload = std::variant<std::string, WsJoinRoomResultPayload,
-                               WsJoinRoomRequestPayload>;
+                               WsJoinRoomRequestPayload, WsRoomReadyPayload>;
 
 struct WsMessage {
   enum Type : int {
@@ -43,6 +52,7 @@ struct WsMessage {
     REQUEST_JOIN_ROOM,
     ALLOW_JOIN_ROOM,
     DENY_JOIN_ROOM,
+    ROOM_READY,
   };
 
   Type type;
@@ -96,6 +106,11 @@ struct adl_serializer<glimpse::WsMessage> {
       case glimpse::WsMessage::Type::ALLOW_JOIN_ROOM:
       case glimpse::WsMessage::Type::DENY_JOIN_ROOM: {
         msg.payload = j.at("payload").get<glimpse::WsJoinRoomResultPayload>();
+        break;
+      }
+
+      case glimpse::WsMessage::Type::ROOM_READY: {
+        msg.payload = j.at("payload").get<glimpse::WsRoomReadyPayload>();
         break;
       }
 

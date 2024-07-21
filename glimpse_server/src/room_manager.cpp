@@ -41,13 +41,18 @@ std::string RoomManager::joinRoom(const User& user, const std::string& roomId) {
 
   if (isRoomHost(user.id, roomId)) {
     // Host is allowed immediately
-    WsJoinRoomResultPayload payload = {.roomId = roomId, .approved = true};
+    WsJoinRoomResultPayload payload = {
+        .requestId = joinRoomRequestId, .roomId = roomId, .approved = true};
     wsManager_->sendMessage(
         user.id, {.type = WsMessage::ALLOW_JOIN_ROOM, .payload = payload});
   } else {
     // Guest needs host's approval
     WsJoinRoomRequestPayload payload = {
-        .roomId = roomId, .userId = user.id, .username = user.name};
+        .requestId = joinRoomRequestId,
+        .roomId = roomId,
+        .userId = user.id,
+        .username = user.name,
+    };
 
     requests_.emplace(joinRoomRequestId, payload);
     wsManager_->sendMessage(
@@ -63,26 +68,34 @@ void RoomManager::approveJoinRoomRequest(const std::string& requestId,
   if (not requests_.contains(requestId)) {
     throw std::runtime_error("request does not exist");
   }
-
-  if (not rooms_.contains(requests_.at(requestId).roomId)) {
+  auto roomId = requests_.at(requestId).roomId;
+  if (not rooms_.contains(roomId)) {
     throw std::runtime_error("room does not exist");
   }
 
-  if (not isRoomHost(hostId, requests_.at(requestId).roomId)) {
+  if (not isRoomHost(hostId, roomId)) {
     throw std::runtime_error("user is not a host");
   }
 
-  rooms_.at(requests_.at(requestId).roomId)
-      .setGuest({
-          .id = requests_.at(requestId).userId,
-          .name = requests_.at(requestId).username,
-      });
+  rooms_.at(roomId).setGuest({
+      .id = requests_.at(requestId).userId,
+      .name = requests_.at(requestId).username,
+  });
 
-  WsJoinRoomResultPayload payload = {.roomId = requests_.at(requestId).roomId,
-                                     .approved = true};
+  WsJoinRoomResultPayload payload = {
+      .requestId = requestId, .roomId = roomId, .approved = true};
   wsManager_->sendMessage(
       requests_.at(requestId).userId,
       {.type = WsMessage::ALLOW_JOIN_ROOM, .payload = payload});
+
+  WsRoomReadyPayload roomReadyPayload = {.roomId = roomId};
+
+  wsManager_->sendMessage(
+      requests_.at(requestId).userId,
+      {.type = WsMessage::ROOM_READY, .payload = roomReadyPayload});
+
+  wsManager_->sendMessage(
+      hostId, {.type = WsMessage::ROOM_READY, .payload = roomReadyPayload});
 
   requests_.erase(requestId);
 };
@@ -93,16 +106,18 @@ void RoomManager::denyJoinRoomRequest(const std::string& requestId,
     throw std::runtime_error("request does not exist");
   }
 
-  if (not rooms_.contains(requests_.at(requestId).roomId)) {
+  auto roomId = requests_.at(requestId).roomId;
+
+  if (not rooms_.contains(roomId)) {
     throw std::runtime_error("room does not exist");
   }
 
-  if (not isRoomHost(hostId, requests_.at(requestId).roomId)) {
+  if (not isRoomHost(hostId, roomId)) {
     throw std::runtime_error("user is not a host");
   }
 
-  WsJoinRoomResultPayload payload = {.roomId = requests_.at(requestId).roomId,
-                                     .approved = false};
+  WsJoinRoomResultPayload payload = {
+      .requestId = requestId, .roomId = roomId, .approved = false};
   wsManager_->sendMessage(
       requests_.at(requestId).userId,
       {.type = WsMessage::DENY_JOIN_ROOM, .payload = payload});
