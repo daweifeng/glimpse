@@ -18,7 +18,7 @@ function StartButton() {
     )
 }
 
-export default function NewRoomPage() {
+export default function JoinRoomPage() {
     const router = useRouter();
 
     const handleSubmit = async (data: FormData) => {

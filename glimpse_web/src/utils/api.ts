@@ -59,3 +59,31 @@ export const denyJoinRoom = async (userId:string, requestId: string) => {
     }
     return await response.json();
 }
+
+export const exchangeSDP = async (roomId: string, userId:string , sdp: string) => {
+    const response = await fetch(`${serverApiUrl}/room/sdp`, {
+        method: "POST",
+        body: JSON.stringify({ roomId, userId, sdp }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+    if (!response.ok) {
+        throw new Error("Failed to exchange sdp");
+    }
+    return await response.json();
+}
+
+export const exchangeICE = async (roomId: string, userId:string , ice: string) => {
+    const response = await fetch(`${serverApiUrl}/room/ice`, {
+        method: "POST",
+        body: JSON.stringify({ roomId, userId, ice }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+    if (!response.ok) {
+        throw new Error("Failed to exchange sdp");
+    }
+    return await response.json();
+}

@@ -1,3 +1,4 @@
+import { exchangeICE, exchangeSDP } from "@/utils/api";
 import { proxy } from "valtio";
 
 export enum WsMessageType {
@@ -8,6 +9,8 @@ export enum WsMessageType {
     AllowJoinRoom,
     DenyJoinRoom,
     RoomReady,
+    SDP,
+    ICE
 }
 
 export enum WsConnectionState {
@@ -44,6 +47,8 @@ class Connection {
     private _joinRoomRequestId: string | null = null;
     private _roomId: string | null = null;
     private _isHost = false;
+    private _peerConnection: RTCPeerConnection | null = null;
+    private _pendingICEs: string[] = [];
 
 
     public state = proxy<State>({
@@ -110,7 +115,7 @@ class Connection {
         }
     }
 
-    private onMessage(message: any) {
+    private async onMessage(message: any) {
         console.log("Received message", message);
 
         switch (message.type) {
@@ -139,13 +144,137 @@ class Connection {
                 if (message.payload.roomId === this._roomId) {
                     console.log("Room is ready");
                     this.state.peerConnectionState = PeerConnectionState.Connecting;
-                    // TODO: start peer connection
+                    console.log(this._isHost)
+                    if (this._isHost) {
+                        this.createPeerConnection();
+                        this.setUpVideo()
+                    }
                 }
                 break;
+
+            case WsMessageType.ICE:
+                if (!this._peerConnection || !this._peerConnection.remoteDescription) {
+                    this._pendingICEs.push(message.payload);
+                } else {
+                    this._peerConnection.addIceCandidate(JSON.parse(message.payload));
+                }
+                break;
+
+            case WsMessageType.SDP:
+                if (!this._peerConnection) {
+                    this.createPeerConnection();
+                    (this._peerConnection as unknown as RTCPeerConnection).setRemoteDescription(JSON.parse(message.payload));
+                    if (this._pendingICEs.length !== 0) {
+                        this._pendingICEs.forEach((ice) => {
+                            (this._peerConnection as unknown as RTCPeerConnection).addIceCandidate(JSON.parse(ice));
+                        })
+                        this._pendingICEs = [];
+                    }
+                    await this.setUpVideo();
+                    const answer = await (this._peerConnection as unknown as RTCPeerConnection).createAnswer();
+                    const userId = window.localStorage.getItem("userId");
+                    if (!userId) {
+                        console.error("Missing userId");
+                        return;
+                    }
+                    if (!this._roomId) {
+                        console.error("Missing roomId");
+                        return;
+                    }
+                    exchangeSDP(this._roomId, userId, JSON.stringify(answer));
+                    (this._peerConnection as unknown as RTCPeerConnection).setLocalDescription(answer);
+                } else {
+                    this._peerConnection.setRemoteDescription(JSON.parse(message.payload));
+                    if (this._pendingICEs.length !== 0) {
+                        this._pendingICEs.forEach((ice) => {
+                            (this._peerConnection as unknown as RTCPeerConnection).addIceCandidate(JSON.parse(ice));
+                        })
+                        this._pendingICEs = [];
+                    }
+                }
 
             default:
                 break;
         }
+    }
+
+    createPeerConnection() {
+        this._peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+        this._peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                const userId = window.localStorage.getItem("userId");
+                if (!userId) {
+                    console.error("Missing userId");
+                    return;
+                }
+                if (!this._roomId) {
+                    console.error("Missing roomId");
+                    return;
+                }
+                exchangeICE(this._roomId, userId, JSON.stringify(event.candidate.toJSON()));
+            }
+        }
+        this._peerConnection.onconnectionstatechange = () => {
+            console.log("Peer Connection State: ", this._peerConnection?.connectionState);
+            if (this._peerConnection?.connectionState === "connected") {
+                this.state.peerConnectionState = PeerConnectionState.Connected;
+            }
+        }
+        this._peerConnection.onnegotiationneeded = async (event) => {
+            if (this._peerConnection?.remoteDescription) {
+                return;
+            }
+            const userId = window.localStorage.getItem("userId");
+            const offer = await this._peerConnection?.createOffer();
+            if (!userId) {
+                console.error("Missing userId");
+                return;
+            }
+            if (!this._roomId) {
+                console.error("Missing roomId");
+                return;
+            }
+            exchangeSDP(this._roomId, userId, JSON.stringify(offer));
+            this._peerConnection?.setLocalDescription(offer);
+        }
+
+        this._peerConnection.ontrack = (event) => {
+            const video = document.querySelector<HTMLVideoElement>("#remote-video");
+            if (!video) {
+                console.error("could not find video element");
+                return;
+            }
+            video.srcObject = event.streams[0];
+            video.onloadedmetadata = () => {
+                video.play();
+            };
+        }
+    }
+
+    async setUpVideo() {
+        let stream = null;
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            this._peerConnection?.addTrack(stream.getVideoTracks()[0], stream);
+            this._peerConnection?.addTrack(stream.getAudioTracks()[0], stream);
+            const video = document.querySelector<HTMLVideoElement>("#self-video");
+            if (!video) {
+                console.error("could not find video element");
+                return;
+            }
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play();
+            };
+          /* use the stream */
+        } catch (err) {
+          /* handle the error */
+          console.error((err as Error).message)
+        }
+
     }
 }
 
