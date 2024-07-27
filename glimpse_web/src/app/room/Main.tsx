@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { connection, PeerConnectionState, WsConnectionState } from "./Connection";
 import { approveJoinRoom, denyJoinRoom, joinRoom, serverWsUrl } from "@/utils/api";
 import { useSnapshot } from "valtio";
+import Video from "./Video";
 
 export default function ConnectionContainer() {
     const snap = useSnapshot(connection.state);
@@ -51,8 +52,6 @@ export default function ConnectionContainer() {
         connection.connect(`${serverWsUrl}/ws?&userId=${userId}&username=${username}`)
             .then(async () => {
                 const response = await joinRoom(username, userId, roomId);
-                connection.setRoomId(roomId);
-                connection.setIsHost(isHost === "true");
                 connection.setJoinRoomRequestId(response.requestId);
             }).catch((err: Error) => {
                 console.error(err);
@@ -65,7 +64,19 @@ export default function ConnectionContainer() {
     }, [roomId, router, isHost]);
 
     if (snap.peerConnectionState === PeerConnectionState.Waiting) {
-        return <div>Waiting for connection...</div>
+        return (
+            <div className="text-center">
+                <div className="text-3xl font-bold">Waiting for connection... </div>
+                <div>
+                    Room Id: <input value={roomId ?? ""} disabled size={40}/>
+                </div>
+                <div>
+                    <button className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded transition ease-in-out delay-150" onClick={() => {
+                        navigator.clipboard.writeText(roomId ?? "")
+                    }}>copy</button>
+                </div>
+            </div>
+        )
     }
 
     if (snap.peerConnectionState === PeerConnectionState.Denied) {
@@ -82,24 +93,10 @@ export default function ConnectionContainer() {
         )
     }
 
-    if (snap.peerConnectionState === PeerConnectionState.Connecting) {
-        return <div>
-
-            Connecting...
-            </div>
-    }
-
-    if (snap.peerConnectionState === PeerConnectionState.Connected) {
-        return (
-        <div>
-            Connected..
-        </div>
-        )
-    }
-
     return (
         <div>
-                Ugg..
+            <Video id={"self-video"} name={"self"} />
+            <Video id={"remote-video"} name={"remote"} />
         </div>
     );
 }

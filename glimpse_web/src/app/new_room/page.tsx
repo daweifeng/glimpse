@@ -25,10 +25,13 @@ export default function NewRoomPage() {
         const username = data.get("username");
         try {
             if (username) {
-                const id = uuidv4();
-                const response = await createRoom(username.toString(), id);
-                window.localStorage.setItem("userId", id);
+                let id = window.localStorage.getItem("userId");
+                if (!id) {
+                    id = uuidv4();
+                    window.localStorage.setItem("userId", id);
+                }
                 window.localStorage.setItem("username", username.toString());
+                const response = await createRoom(username.toString(), id);
                 router.push(`/room?id=${response.roomId}&&is_host=true`);
             } else {
                 // Show error

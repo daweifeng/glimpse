@@ -45,6 +45,8 @@ std::string RoomManager::joinRoom(const User& user, const std::string& roomId) {
         .requestId = joinRoomRequestId, .roomId = roomId, .approved = true};
     wsManager_->sendMessage(
         user.id, {.type = WsMessage::ALLOW_JOIN_ROOM, .payload = payload});
+
+    // TODO: when host quit, the room is gone and guest will be disconnected
   } else {
     // Guest needs host's approval
     WsJoinRoomRequestPayload payload = {

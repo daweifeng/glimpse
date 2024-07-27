@@ -26,8 +26,11 @@ export default function JoinRoomPage() {
         const roomId = data.get("room-id");
         try {
             if (username && roomId) {
-                const userId = uuidv4();
-                window.localStorage.setItem("userId", userId);
+                if (!window.localStorage.getItem("userId")) {
+                    const userId = uuidv4();
+                    window.localStorage.setItem("userId", userId);
+                }
+
                 window.localStorage.setItem("username", username.toString());
                 router.push(`/room?id=${roomId}&&is_host=false`);
             } else {

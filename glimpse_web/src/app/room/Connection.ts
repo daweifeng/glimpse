@@ -45,8 +45,6 @@ class Connection {
 
     private _connection: WebSocket | null = null;
     private _joinRoomRequestId: string | null = null;
-    private _roomId: string | null = null;
-    private _isHost = false;
     private _peerConnection: RTCPeerConnection | null = null;
     private _pendingICEs: string[] = [];
 
@@ -56,6 +54,17 @@ class Connection {
         peerConnectionState: PeerConnectionState.Waiting,
         joinRoomRequest: null,
     });
+
+    public get roomId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('id');
+    }
+
+    public get isHost(): boolean {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        return urlParams.get('is_host') === "true";
+    }
 
     public async connect(url: string) {
         if (this._connection) {
@@ -101,14 +110,6 @@ class Connection {
         this._joinRoomRequestId = requestId;
     }
 
-    public setRoomId(roomId: string) {
-        this._roomId = roomId;
-    }
-
-    public setIsHost(isHost: boolean) {
-        this._isHost = isHost;
-    }
-
     public close() {
         if (this._connection) {
             this._connection.close();
@@ -120,7 +121,7 @@ class Connection {
 
         switch (message.type) {
             case WsMessageType.RequestJoinRoom:
-                if (this._isHost) {
+                if (this.isHost) {
                     this.state.peerConnectionState = PeerConnectionState.ReceivdRequest;
                     this.state.joinRoomRequest = message.payload
                 }
@@ -141,11 +142,13 @@ class Connection {
 
 
             case WsMessageType.RoomReady:
-                if (message.payload.roomId === this._roomId) {
+                console.log(this.roomId)
+                if (message.payload.roomId === this.roomId) {
                     console.log("Room is ready");
                     this.state.peerConnectionState = PeerConnectionState.Connecting;
-                    console.log(this._isHost)
-                    if (this._isHost) {
+                    console.log(this.isHost)
+                    if (this.isHost) {
+                        console.log("is host")
                         this.createPeerConnection();
                         this.setUpVideo()
                     }
@@ -177,11 +180,11 @@ class Connection {
                         console.error("Missing userId");
                         return;
                     }
-                    if (!this._roomId) {
+                    if (!this.roomId) {
                         console.error("Missing roomId");
                         return;
                     }
-                    exchangeSDP(this._roomId, userId, JSON.stringify(answer));
+                    exchangeSDP(this.roomId, userId, JSON.stringify(answer));
                     (this._peerConnection as unknown as RTCPeerConnection).setLocalDescription(answer);
                 } else {
                     this._peerConnection.setRemoteDescription(JSON.parse(message.payload));
@@ -209,11 +212,11 @@ class Connection {
                     console.error("Missing userId");
                     return;
                 }
-                if (!this._roomId) {
+                if (!this.roomId) {
                     console.error("Missing roomId");
                     return;
                 }
-                exchangeICE(this._roomId, userId, JSON.stringify(event.candidate.toJSON()));
+                exchangeICE(this.roomId, userId, JSON.stringify(event.candidate.toJSON()));
             }
         }
         this._peerConnection.onconnectionstatechange = () => {
@@ -232,11 +235,11 @@ class Connection {
                 console.error("Missing userId");
                 return;
             }
-            if (!this._roomId) {
+            if (!this.roomId) {
                 console.error("Missing roomId");
                 return;
             }
-            exchangeSDP(this._roomId, userId, JSON.stringify(offer));
+            exchangeSDP(this.roomId, userId, JSON.stringify(offer));
             this._peerConnection?.setLocalDescription(offer);
         }
 
