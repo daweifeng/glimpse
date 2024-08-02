@@ -95,8 +95,8 @@ export default function ConnectionContainer() {
 
     return (
         <div>
-            <Video id={"self-video"} name={"self"} />
-            <Video id={"remote-video"} name={"remote"} />
+            <Video id={"self-video"} name={"self"} isMuted/>
+            <Video id={"remote-video"} name={"remote"} isMuted={false} />
         </div>
     );
 }
