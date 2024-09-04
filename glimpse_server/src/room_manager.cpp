@@ -169,4 +169,25 @@ void RoomManager::exchangeICEMessage(const std::string& roomId,
   }
 }
 
+void RoomManager::endRoom(const std::string& roomId,
+                          const std::string& userId) {
+  if (not rooms_.contains(roomId)) {
+    throw RoomManagerError("room does not exist");
+  }
+
+  if (not(rooms_.at(roomId).getHostId() == userId or
+          rooms_.at(roomId).getGuestId() == userId)) {
+    throw RoomManagerError("user is not a host nor a guest");
+  }
+
+  WsRoomEndPayload payload = {.roomId = roomId};
+
+  wsManager_->sendMessage(rooms_.at(roomId).getGuestId(),
+                          {.type = WsMessage::ROOM_END, .payload = payload});
+  wsManager_->sendMessage(rooms_.at(roomId).getHostId(),
+                          {.type = WsMessage::ROOM_END, .payload = payload});
+
+  rooms_.erase(roomId);
+}
+
 };  // namespace glimpse

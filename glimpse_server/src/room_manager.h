@@ -39,6 +39,7 @@ class RoomManager {
   void exchangeICEMessage(const std::string& roomId,
                           const std::string& fromUserId,
                           const std::string& message);
+  void endRoom(const std::string& roomId, const std::string& userId);
 
  private:
   std::shared_ptr<WsManager> wsManager_;

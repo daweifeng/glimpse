@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { connection, PeerConnectionState, WsConnectionState } from "./Connection";
-import { approveJoinRoom, denyJoinRoom, joinRoom, serverWsUrl } from "@/utils/api";
+import { approveJoinRoom, denyJoinRoom, endRoom, joinRoom, serverWsUrl } from "@/utils/api";
 import { useSnapshot } from "valtio";
 import Video from "./Video";
 
@@ -36,6 +36,18 @@ export default function ConnectionContainer() {
             }
             denyJoinRoom(userId,requestId);
             connection.state.peerConnectionState = PeerConnectionState.Waiting;
+        } catch (error) {
+            console.error((error as Error).message)
+        }
+    }
+
+    const handleEndRoom = () => {
+        try {
+            const userId = window.localStorage.getItem("userId");
+            if (!userId || !roomId) {
+                throw new Error("missing userId or roomId")
+            }
+            endRoom(roomId, userId);
         } catch (error) {
             console.error((error as Error).message)
         }
@@ -93,10 +105,20 @@ export default function ConnectionContainer() {
         )
     }
 
+    if (snap.peerConnectionState === PeerConnectionState.Disconnected) {
+        return (
+            <div className="text-center">
+                <div className="text-3xl font-bold">Room conversation ended...</div>
+                <button className="min-w-40 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150" onClick={() => router.push("/")}>Back To Home</button>
+            </div>
+        )
+    }
+
     return (
         <div>
             <Video id={"self-video"} name={"self"} isMuted/>
             <Video id={"remote-video"} name={"remote"} isMuted={false} />
+            <button className="min-w-40 bg-red-500 hover:bg-red-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150" onClick={handleEndRoom}>End</button>
         </div>
     );
 }

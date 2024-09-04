@@ -61,6 +61,13 @@ struct DenyJoinRoomRequestPayload {
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(DenyJoinRoomRequestPayload, userId, requestId);
 };
 
+struct EndRoomRequestPayload {
+  std::string userId;
+  std::string roomId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(EndRoomRequestPayload, userId, roomId);
+};
+
 struct SDPExchangePayload {
   std::string userId;
   std::string roomId;
@@ -112,6 +119,7 @@ class RoomController : Controller {
                               uWS::HttpRequest *req);
   void handleSDPPost(uWS::HttpResponse<false> *res, uWS::HttpRequest *req);
   void handleICEPost(uWS::HttpResponse<false> *res, uWS::HttpRequest *req);
+  void handleEndRoomPost(uWS::HttpResponse<false> *res, uWS::HttpRequest *req);
 
  private:
   std::shared_ptr<RoomManager> roomManager_;

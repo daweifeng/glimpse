@@ -231,6 +231,33 @@ void RoomController::handleICEPost(uWS::HttpResponse<false> *res,
   });
 };
 
+void RoomController::handleEndRoomPost(uWS::HttpResponse<false> *res,
+                                       uWS::HttpRequest *req) {
+  handlePost(res, req, [this](auto *res, auto *, auto body) {
+    try {
+      auto j = nlohmann::json::parse(*body);
+      auto payload = j.template get<EndRoomRequestPayload>();
+
+      if (payload.userId.empty()) {
+        throw std::runtime_error("empty payload field");
+      }
+
+      roomManager_->endRoom(payload.roomId, payload.userId);
+
+      res->writeHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+          ->end("{}");
+    } catch (const nlohmann::json::exception &e) {
+      auto errMsg = fmt::format("Invalid payload: {}", e.what());
+      spdlog::error(errMsg);
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
+    } catch (std::exception &err) {
+      auto errMsg = fmt::format("Could not end room: {}", err.what());
+      spdlog::error(errMsg);
+      res->cork([this, res, errMsg]() { respondError(res, errMsg); });
+    }
+  });
+};
+
 void WsController::handleWsRouteUpgrade(uWS::HttpResponse<false> *res,
                                         uWS::HttpRequest *req,
                                         us_socket_context_t *context) {

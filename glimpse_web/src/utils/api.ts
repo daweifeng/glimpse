@@ -87,3 +87,18 @@ export const exchangeICE = async (roomId: string, userId:string , ice: string) =
     }
     return await response.json();
 }
+
+
+export const endRoom = async (roomId: string, userId: string) => {
+    const response = await fetch(`${serverApiUrl}/room/end`, {
+        method: "POST",
+        body: JSON.stringify({ roomId, userId }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+    if (!response.ok) {
+        throw new Error("Failed to end room");
+    }
+    return await response.json();
+}

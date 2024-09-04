@@ -44,6 +44,9 @@ int main() {
       .post("/room/ice",
             std::bind(&glimpse::RoomController::handleICEPost, roomController,
                       std::placeholders::_1, std::placeholders::_2))
+      .post("/room/end", std::bind(&glimpse::RoomController::handleEndRoomPost,
+                                   roomController, std::placeholders::_1,
+                                   std::placeholders::_2))
       .ws<glimpse::User>(
           "/ws",
           {.compression = uWS::SHARED_COMPRESSOR,

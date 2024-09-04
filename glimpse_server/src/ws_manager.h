@@ -41,8 +41,15 @@ struct WsRoomReadyPayload {
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsRoomReadyPayload, roomId);
 };
 
-using WsPayload = std::variant<std::string, WsJoinRoomResultPayload,
-                               WsJoinRoomRequestPayload, WsRoomReadyPayload>;
+struct WsRoomEndPayload {
+  std::string roomId;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(WsRoomEndPayload, roomId);
+};
+
+using WsPayload =
+    std::variant<std::string, WsJoinRoomResultPayload, WsJoinRoomRequestPayload,
+                 WsRoomReadyPayload, WsRoomEndPayload>;
 
 struct WsMessage {
   enum Type : int {
@@ -53,6 +60,7 @@ struct WsMessage {
     ALLOW_JOIN_ROOM,
     DENY_JOIN_ROOM,
     ROOM_READY,
+    ROOM_END,
     SDP,
     ICE,
   };
@@ -113,6 +121,11 @@ struct adl_serializer<glimpse::WsMessage> {
 
       case glimpse::WsMessage::Type::ROOM_READY: {
         msg.payload = j.at("payload").get<glimpse::WsRoomReadyPayload>();
+        break;
+      }
+
+      case glimpse::WsMessage::Type::ROOM_END: {
+        msg.payload = j.at("payload").get<glimpse::WsRoomEndPayload>();
         break;
       }
 

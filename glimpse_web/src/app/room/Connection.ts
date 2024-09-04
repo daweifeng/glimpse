@@ -9,6 +9,7 @@ export enum WsMessageType {
     AllowJoinRoom,
     DenyJoinRoom,
     RoomReady,
+    RoomEnd,
     SDP,
     ICE
 }
@@ -142,13 +143,11 @@ class Connection {
 
 
             case WsMessageType.RoomReady:
-                console.log(this.roomId)
                 if (message.payload.roomId === this.roomId) {
                     console.log("Room is ready");
                     this.state.peerConnectionState = PeerConnectionState.Connecting;
                     console.log(this.isHost)
                     if (this.isHost) {
-                        console.log("is host")
                         this.createPeerConnection();
                         this.setUpVideo()
                     }
@@ -195,6 +194,15 @@ class Connection {
                         this._pendingICEs = [];
                     }
                 }
+                break;
+            case WsMessageType.RoomEnd:
+                if (message.payload.roomId === this.roomId) {
+                    console.log("Room has ended");
+                    this.state.peerConnectionState = PeerConnectionState.Disconnected;
+                    this._peerConnection?.close();
+                    this._peerConnection = null;
+                }
+                break
 
             default:
                 break;
