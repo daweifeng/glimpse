@@ -15,7 +15,7 @@ const config: Config = {
       },
       grayscale: {
         50: "50%",
-      }
+      },
     },
   },
   plugins: [],
