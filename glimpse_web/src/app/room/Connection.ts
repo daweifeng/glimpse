@@ -48,6 +48,7 @@ class Connection {
     private _joinRoomRequestId: string | null = null;
     private _peerConnection: RTCPeerConnection | null = null;
     private _pendingICEs: string[] = [];
+    private _mediaStream: MediaStream | null = null;
 
 
     public state = proxy<State>({
@@ -201,6 +202,9 @@ class Connection {
                     this.state.peerConnectionState = PeerConnectionState.Disconnected;
                     this._peerConnection?.close();
                     this._peerConnection = null;
+                    this._mediaStream?.getTracks().forEach((track) => {
+                        track.stop();
+                    });
                 }
                 break
 
@@ -265,18 +269,17 @@ class Connection {
     }
 
     async setUpVideo() {
-        let stream = null;
 
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            this._peerConnection?.addTrack(stream.getVideoTracks()[0], stream);
-            this._peerConnection?.addTrack(stream.getAudioTracks()[0], stream);
+            this._mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            this._peerConnection?.addTrack(this._mediaStream.getVideoTracks()[0], this._mediaStream);
+            this._peerConnection?.addTrack(this._mediaStream.getAudioTracks()[0], this._mediaStream);
             const video = document.querySelector<HTMLVideoElement>("#self-video");
             if (!video) {
                 console.error("could not find video element");
                 return;
             }
-            video.srcObject = stream;
+            video.srcObject = this._mediaStream;
             video.onloadedmetadata = () => {
                 video.play();
             };
