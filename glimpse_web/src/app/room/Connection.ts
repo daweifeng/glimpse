@@ -70,7 +70,11 @@ class Connection {
     if (this._connection) {
       this._connection.close();
     }
+    if (this._peerConnection) {
+      this._peerConnection.close();
+    }
     this.state.wsConnectionState = WsConnectionState.Connecting;
+    this.state.peerConnectionState = PeerConnectionState.Waiting;
     return new Promise<void>((resolve, reject) => {
       this._connection = new WebSocket(url);
       this._connection.onmessage = (event) => {
@@ -293,7 +297,10 @@ class Connection {
   async setUpVideo() {
     try {
       this._mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
         audio: true,
       });
       this._peerConnection?.addTrack(

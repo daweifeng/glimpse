@@ -15,7 +15,8 @@ import {
   serverWsUrl,
 } from "@/utils/api";
 import { useSnapshot } from "valtio";
-import Video from "./Video";
+import MiniVideo from "./MiniVideo";
+import MainVideo from "./MainVideo";
 
 export default function ConnectionContainer() {
   const snap = useSnapshot(connection.state);
@@ -146,15 +147,17 @@ export default function ConnectionContainer() {
   }
 
   return (
-    <div>
-      <Video id={"self-video"} name={"self"} isMuted />
-      <Video id={"remote-video"} name={"remote"} isMuted={false} />
-      <button
-        className="min-w-40 bg-red-500 hover:bg-red-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150"
-        onClick={handleEndRoom}
-      >
-        End
-      </button>
+    <div className="relative w-screen h-screen">
+      <MiniVideo id={"self-video"} name={"You"} isMuted />
+      <MainVideo id={"remote-video"} name={"remote"} isMuted={false} />
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2">
+        <button
+          className="min-w-40 bg-red-500 hover:bg-red-700 text-white font-bold mt-2 py-2 px-4 rounded transition ease-in-out delay-150"
+          onClick={handleEndRoom}
+        >
+          End
+        </button>
+      </div>
     </div>
   );
 }
