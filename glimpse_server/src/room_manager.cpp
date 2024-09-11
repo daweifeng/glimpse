@@ -182,10 +182,15 @@ void RoomManager::endRoom(const std::string& roomId,
 
   WsRoomEndPayload payload = {.roomId = roomId};
 
-  wsManager_->sendMessage(rooms_.at(roomId).getGuestId(),
-                          {.type = WsMessage::ROOM_END, .payload = payload});
-  wsManager_->sendMessage(rooms_.at(roomId).getHostId(),
-                          {.type = WsMessage::ROOM_END, .payload = payload});
+  if (wsManager_->isUserOnline(rooms_.at(roomId).getGuestId())) {
+    wsManager_->sendMessage(rooms_.at(roomId).getGuestId(),
+                            {.type = WsMessage::ROOM_END, .payload = payload});
+  }
+
+  if (wsManager_->isUserOnline(rooms_.at(roomId).getHostId())) {
+    wsManager_->sendMessage(rooms_.at(roomId).getHostId(),
+                            {.type = WsMessage::ROOM_END, .payload = payload});
+  }
 
   rooms_.erase(roomId);
 }

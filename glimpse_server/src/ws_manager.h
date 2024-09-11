@@ -87,6 +87,7 @@ class WsManager {
                        uWS::OpCode opCode);
 
   void sendMessage(const std::string& userId, const WsMessage& message);
+  bool isUserOnline(const std::string& userId);
 
  private:
   void sendWsMessage(WsSession* ws, const WsMessage& message);

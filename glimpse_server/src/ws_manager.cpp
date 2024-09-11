@@ -65,4 +65,11 @@ void WsManager::sendMessage(const std::string &userId,
   }
 }
 
+bool WsManager::isUserOnline(const std::string &userId) {
+  {
+    std::lock_guard<std::mutex> lock(sessionsMutex_);
+    return wsSessions_.contains(userId);
+  }
+}
+
 };  // namespace glimpse
